@@ -1,7 +1,7 @@
 {
   "id": "auroratrace",
   "title": "Aurora Trace",
-  "description": "Follow the May 2024 solar eruptions to Earth and compare the magnetic storm at two Canadian observatories.",
+  "description": "Pick a May or October 2024 storm night and trace its solar eruptions and magnetic signals across Canada.",
   "category": "explorers",
   "tags": [
     "space weather",
@@ -19,12 +19,12 @@
   "access": "browser",
   "data_info": {
     "mode": "snapshot",
-    "detail": "NASA DONKI links solar eruptions to the May 2024 storm, with Canadian ground measurements from INTERMAGNET.",
+    "detail": "NASA DONKI links solar eruptions to two 2024 storms, with Canadian ground measurements from INTERMAGNET.",
     "cadence": "Monthly archive check",
     "probes": [
       {
         "label": "Data retrieved",
-        "url": "https://coolcode.ca/auroratrace/data/storm.json",
+        "url": "https://coolcode.ca/auroratrace/data/archive.json",
         "path": [
           "retrieved"
         ],

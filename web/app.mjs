@@ -1,5 +1,7 @@
 import {
+  eveningStops,
   fieldText,
+  stationClocks,
   indexAt,
   kpAt,
   linePath,
@@ -10,6 +12,26 @@ const byId = (id) => document.getElementById(id);
 const chart = byId("chart"),
   slider = byId("cursor");
 const colors = { VIC: "#b4edb3", STJ: "#ffafbb" };
+const cases = new Map([
+  ["2024-05-10", "./data/storm.json"],
+  ["2024-10-10", "./data/october.json"],
+]);
+const currentUrl = new URL(location.href);
+const requested = currentUrl.searchParams.get("night");
+const night = cases.has(requested) ? requested : "2024-05-10";
+const dataPath = cases.get(night);
+function caseUrl(value) {
+  const url = new URL(location.href);
+  url.searchParams.set("night", value);
+  return url.href;
+}
+byId("night").value = night;
+byId("case-link").href = caseUrl(night);
+byId("data-download").href = dataPath;
+byId("night").onchange = () => location.assign(caseUrl(byId("night").value));
+window.addEventListener("pageshow", () => {
+  byId("night").value = night;
+});
 let edition,
   selected = 144,
   plot;
@@ -82,8 +104,16 @@ function draw() {
       ),
     );
   }
-  const ticks =
-    width < 550 ? [0, 144, 288, 432] : [0, 72, 144, 216, 288, 360, 432, 503];
+  const tickSpacing = Math.max(
+    1,
+    Math.round((width < 550 ? 720 : 360) / edition.step_minutes),
+  );
+  const ticks = Array.from(
+    { length: Math.ceil(edition.bin_count / tickSpacing) },
+    (_, n) => n * tickSpacing,
+  );
+  if (width >= 550 && ticks.at(-1) < edition.bin_count - 1)
+    ticks.push(edition.bin_count - 1);
   for (const index of ticks) {
     const end = index === edition.bin_count - 1;
     const xx = x(index),
@@ -130,6 +160,16 @@ function read(index) {
   const label = timeText(time) + " UTC";
   slider.setAttribute("aria-valuetext", label);
   byId("selected").textContent = label;
+  const evening = byId("evening");
+  evening.value = [...evening.options].some(
+    (option) => option.value === String(selected),
+  )
+    ? String(selected)
+    : "";
+  byId("local-times").textContent =
+    stationClocks(time)
+      .map((station) => station.name + " " + station.date + " " + station.clock)
+      .join(" · ") + " local time.";
   byId("kp-value").textContent = bin ? String(bin.value) : "—";
   byId("back").disabled = selected === 0;
   byId("next").disabled = selected === edition.bin_count - 1;
@@ -176,6 +216,37 @@ function read(index) {
 
 function populate() {
   const { storm } = edition;
+  const civilDay = new Intl.DateTimeFormat("en-GB", {
+    timeZone: "UTC",
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  });
+  const startDate = new Date(edition.start);
+  byId("plot-period").textContent = civilDay.formatRange(
+    startDate,
+    new Date(Date.parse(edition.end) - 1),
+  );
+  byId("event-intro").textContent =
+    `NASA’s DONKI catalogue associates ${storm.cme.length === 1 ? "one coronal mass ejection" : storm.cme.length + " coronal mass ejections"} with the ${civilDay.format(startDate)} storm. The log follows the linked events in UTC.`;
+  const guide = byId("storm-guide");
+  guide.href = edition.source_guide || storm.link;
+  guide.textContent =
+    "NASA record · " + (edition.title || civilDay.format(startDate));
+  byId("baseline-method").textContent =
+    "Each point is a five-minute average of definitive one-minute X measurements. Each station’s reference is the median X over the hour beginning " +
+    timeText(edition.start) +
+    " UTC and ending just before " +
+    timeText(edition.baseline_end) +
+    " UTC. Negative values indicate a decrease from that local reference. A missing minute leaves a gap for that station.";
+  for (const stop of eveningStops(edition)) {
+    byId("evening").add(
+      new Option(stop.name + " · " + stop.date + " at 21:00", stop.index),
+    );
+  }
+  byId("evening").onchange = () => {
+    if (byId("evening").value !== "") read(Number(byId("evening").value));
+  };
   for (const interval of storm.kp) {
     const button = make("button", interval.value);
     button.type = "button";
@@ -196,6 +267,10 @@ function populate() {
   const events = [
     ...storm.cme.map((row) => ({ ...row, name: "Coronal mass ejection" })),
     { ...storm, name: "Storm interval begins" },
+    ...(storm.mpc || []).map((row) => ({
+      ...row,
+      name: "Modelled magnetopause crossing (NASA SWMF)",
+    })),
     ...storm.ips.map((row) => ({
       ...row,
       name: "Interplanetary shock at Earth",
@@ -268,7 +343,7 @@ function populate() {
 }
 
 try {
-  const response = await fetch("./data/storm.json");
+  const response = await fetch(dataPath);
   if (!response.ok) throw Error("Snapshot unavailable");
   edition = await response.json();
   populate();

@@ -1,4 +1,4 @@
-"""Rebuild the May 2024 storm edition from DONKI and INTERMAGNET."""
+"""Rebuild the curated Canadian storm editions from DONKI and INTERMAGNET."""
 from datetime import datetime, timedelta, timezone
 import json
 import math
@@ -10,10 +10,13 @@ from urllib.parse import urlencode, urlsplit
 from urllib.request import Request, urlopen
 
 ROOT = Path(__file__).resolve().parents[1]
-STORM_ID = '2024-05-10T15:00:00-GST-001'
-START = datetime(2024, 5, 10, 12, tzinfo=timezone.utc)
-STOP = datetime(2024, 5, 12, 6, tzinfo=timezone.utc)
-MINUTES = int((STOP - START).total_seconds() / 60)
+CASES = [
+    ('2024-05-10T15:00:00-GST-001', 'May 2024 Gannon storm', 'storm.json',
+     'https://ccmc.gsfc.nasa.gov/storms/may2024/'),
+    ('2024-10-10T15:00:00-GST-001', 'October 2024 geomagnetic storm', 'october.json',
+     'https://ccmc.gsfc.nasa.gov/CMR/TimeInterval/viewTI?id=2024-10-TP-01'),
+]
+MINUTES = 42 * 60
 STEP = 5
 HAPI = 'https://imag-data.bgs.ac.uk/GIN_V1/hapi/'
 STATIONS = [('VIC', 'Victoria', 'British Columbia'), ('STJ', 'St. John’s', 'Newfoundland and Labrador')]
@@ -38,9 +41,9 @@ def get(url):
 def donki(kind, start, end):
     query = urlencode({'startDate': start, 'endDate': end})
     try:
-        return get(f'https://api.nasa.gov/DONKI/{kind}?{query}&api_key=DEMO_KEY')
+        return get(f'https://ccmc.gsfc.nasa.gov/DONKI/WS/get/{kind}?{query}')
     except (URLError, TimeoutError):
-        return get(f'https://kauai.ccmc.gsfc.nasa.gov/DONKI/WS/get/{kind}?{query}')
+        return get(f'https://api.nasa.gov/DONKI/{kind}?{query}&api_key=DEMO_KEY')
 
 
 def record_link(record):
@@ -51,18 +54,24 @@ def record_link(record):
     return link
 
 
-def events():
-    storm = next(row for row in donki('GST', '2024-05-10', '2024-05-13') if row['gstID'] == STORM_ID)
+def events(storm_id):
+    day = storm_id[:10]
+    storm = next(row for row in donki('GST', day, day) if row['gstID'] == storm_id)
     linked = {entry['activityID'] for entry in storm['linkedEvents']}
     result = {}
-    for kind, first, last in [('CME', '2024-05-06', '2024-05-10'), ('IPS', '2024-05-10', '2024-05-12')]:
+    for kind, id_key, time_key in [('CME', 'activityID', 'startTime'),
+                                    ('IPS', 'activityID', 'eventTime'),
+                                    ('MPC', 'mpcID', 'eventTime')]:
+        ids = sorted(i for i in linked if f'-{kind}-' in i)
         rows = []
-        for entry in donki(kind, first, last):
-            if entry['activityID'] in linked:
-                rows.append({'id': entry['activityID'], 'time': entry['startTime' if kind == 'CME' else 'eventTime'],
-                             'region': entry.get('activeRegionNum'), 'link': record_link(entry)})
-        if not rows or {row['id'] for row in rows} != {i for i in linked if f'-{kind}-' in i}:
-            raise ValueError(f'Incomplete {kind} records for {STORM_ID}')
+        if ids:
+            # The storm supplies the event IDs. Query their dates, then join by the full ID.
+            for entry in donki(kind, ids[0][:10], ids[-1][:10]):
+                if entry[id_key] in ids:
+                    rows.append({'id': entry[id_key], 'time': entry[time_key],
+                                 'region': entry.get('activeRegionNum'), 'link': record_link(entry)})
+        if sorted(row['id'] for row in rows) != ids or (not rows and kind in {'CME', 'IPS'}):
+            raise ValueError(f'Incomplete {kind} records for {storm_id}')
         result[kind.lower()] = sorted(rows, key=lambda row: row['time'])
     intervals = []
     for row in sorted(storm['allKpIndex'], key=lambda row: row['observedTime']):
@@ -75,15 +84,15 @@ def events():
         intervals.append({'start': utc(start), 'end': utc(end), 'value': row['kpIndex']})
     if not intervals:
         raise ValueError('Missing Kp')
-    return dict(result, id=STORM_ID, time=storm['startTime'], link=record_link(storm), kp=intervals)
+    return dict(result, id=storm_id, time=storm['startTime'], link=record_link(storm), kp=intervals)
 
 
-def trace(rows, fill):
+def trace(rows, fill, start):
     minutes = [None] * MINUTES
     seen = set()
     for stamp, vector, _ in rows:
         instant = datetime.fromisoformat(stamp)
-        offset = (instant - START).total_seconds() / 60
+        offset = (instant - start).total_seconds() / 60
         if not offset.is_integer() or not 0 <= offset < MINUTES or offset in seen:
             raise ValueError('Unexpected or duplicate minute')
         seen.add(offset)
@@ -95,7 +104,7 @@ def trace(rows, fill):
     reference = [value for value in minutes[:60] if value is not None]
     if len(reference) != 60:
         raise ValueError('Incomplete baseline hour')
-    baseline = median(reference)
+    baseline = round(median(reference), 2)
     values = []
     for i in range(0, MINUTES, STEP):
         group = minutes[i:i + STEP]
@@ -106,30 +115,49 @@ def trace(rows, fill):
     return baseline, values, valid
 
 
-def station(code, name, province):
+def station(code, name, province, start, stop):
     dataset = code.lower() + '/definitive/PT1M/xyzf'
     info_url = HAPI + 'info?' + urlencode({'id': dataset})
-    data_url = HAPI + 'data?' + urlencode({'id': dataset, 'time.min': utc(START), 'time.max': utc(STOP), 'format': 'json'})
+    data_url = HAPI + 'data?' + urlencode({'id': dataset, 'time.min': utc(start), 'time.max': utc(stop), 'format': 'json'})
     info = get(info_url)
     vector = next(p for p in info['parameters'] if p['name'] == 'Field_Vector')
     if (info['cadence'], info['timeStampLocation'], vector['vectorComponents'][0], vector['units'][0]) != ('PT1M', 'begin', 'x', 'nT'):
         raise ValueError('Station cadence, component or units changed')
-    baseline, values, valid = trace(get(data_url)['data'], float(vector['fill']))
+    baseline, values, valid = trace(get(data_url)['data'], float(vector['fill']), start)
     return {'code': code, 'name': name, 'province': province, 'baseline_nT': baseline, 'delta_nT': values,
             'valid_bins': valid, 'data_url': data_url, 'info_url': info_url}
 
 
+def build_edition(storm_id, title, guide, retrieved):
+    day = storm_id[:10]
+    start = datetime.fromisoformat(day).replace(hour=12, tzinfo=timezone.utc)
+    stop = start + timedelta(minutes=MINUTES)
+    storm = events(storm_id)
+    stations = [station(*source, start, stop) for source in STATIONS]
+    return {'title': title, 'date': day, 'source_guide': guide, 'retrieved': retrieved,
+            'start': utc(start), 'end': utc(stop), 'step_minutes': STEP, 'bin_count': MINUTES // STEP,
+            'count': sum(s['valid_bins'] for s in stations), 'baseline_end': utc(start + timedelta(hours=1)),
+            'stations': stations, 'storm': storm}
+
+
 def main():
-    storm = events()
-    stations = [station(*source) for source in STATIONS]
-    edition = {'retrieved': datetime.now(timezone.utc).date().isoformat(), 'start': utc(START), 'end': utc(STOP),
-               'step_minutes': STEP, 'bin_count': MINUTES // STEP, 'count': sum(s['valid_bins'] for s in stations),
-               'baseline_end': utc(START + timedelta(hours=1)), 'stations': stations, 'storm': storm}
-    path = ROOT / 'web/data/storm.json'
-    tmp = path.with_suffix('.tmp')
-    tmp.write_text(json.dumps(edition, ensure_ascii=False, separators=(',', ':'), allow_nan=False) + '\n')
-    tmp.replace(path)
-    print(f"Retrieved {len(storm['cme'])} linked CMEs, {len(storm['kp'])} Kp bins and {edition['count']} station means")
+    retrieved = datetime.now(timezone.utc).date().isoformat()
+    snapshots = {}
+    for storm_id, title, filename, guide in CASES:
+        edition = build_edition(storm_id, title, guide, retrieved)
+        snapshots[filename] = edition
+        print(f"{title}: {len(edition['storm']['cme'])} CMEs, {len(edition['storm']['kp'])} Kp intervals, "
+              f"{edition['count']} station averages")
+    summary = [{'date': edition['date'], 'file': filename, 'count': edition['count']}
+               for filename, edition in snapshots.items()]
+    snapshots['archive.json'] = {'retrieved': retrieved, 'count': sum(item['count'] for item in summary),
+                                 'nights': summary}
+    # Finish retrieving and validating both nights before replacing any local file.
+    for filename, snapshot in snapshots.items():
+        path = ROOT / 'web/data' / filename
+        tmp = path.with_suffix('.tmp')
+        tmp.write_text(json.dumps(snapshot, ensure_ascii=False, separators=(',', ':'), allow_nan=False) + '\n')
+        tmp.replace(path)
 
 
 if __name__ == '__main__':

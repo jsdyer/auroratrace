@@ -34,9 +34,9 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          if ! git diff --quiet -- web/data/storm.json; then
-            git add web/data/storm.json
-            git -c user.name='github-actions[bot]' -c user.email='41898282+github-actions[bot]@users.noreply.github.com' commit -m 'Refresh the May 2024 storm archive'
+          if ! git diff --quiet -- web/data; then
+            git add web/data
+            git -c user.name='github-actions[bot]' -c user.email='41898282+github-actions[bot]@users.noreply.github.com' commit -m 'Refresh the Canadian storm archive'
             git push origin HEAD:main
             gh workflow run pages.yml --ref main
           elif [ "$GITHUB_RUN_ATTEMPT" -gt 1 ]; then

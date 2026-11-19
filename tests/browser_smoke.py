@@ -48,6 +48,29 @@ def main():
                 page.set_viewport_size({"width": 390, "height": 844})
                 assert page.evaluate("document.documentElement.scrollWidth <= window.innerWidth")
                 page.screenshot(path=str(screenshots / "mobile.png"), full_page=True)
+                page.locator("#night").select_option("2024-10-10")
+                page.wait_for_url("**/?night=2024-10-10")
+                page.wait_for_selector("#cursor:enabled")
+                assert "Oct" in page.locator("#selected").inner_text()
+                assert page.locator("#case-link").get_attribute("href").endswith("?night=2024-10-10")
+                assert page.locator("#data-download").get_attribute("href").endswith("october.json")
+                assert page.locator("#event-list li").count() == 4
+                assert page.locator("#bars button").count() == 8
+                assert "magnetopause" in page.locator("#event-list").inner_text()
+                page.locator("#shock").click()
+                assert page.locator("#selected").inner_text() == "10 Oct 14:45 UTC"
+                page.locator("#evening").select_option(label="Victoria · 10 Oct at 21:00")
+                assert page.locator("#selected").inner_text() == "11 Oct 04:00 UTC"
+                assert "Victoria 10 Oct 21:00" in page.locator("#local-times").inner_text()
+                assert page.evaluate("document.documentElement.scrollWidth <= window.innerWidth")
+                page.screenshot(path=str(screenshots / "october-mobile.png"), full_page=True)
+                page.reload()
+                page.wait_for_selector("#cursor:enabled")
+                assert page.locator("#night").input_value() == "2024-10-10"
+                page.locator("#night").select_option("2024-05-10")
+                page.wait_for_url("**/?night=2024-05-10")
+                page.wait_for_selector("#cursor:enabled")
+                assert page.locator("#event-list li").count() == 7
                 assert not errors, errors
                 browser.close()
             print("Browser checks passed: project subpath, matching UTC signals, interval boundaries, event links and mobile layout")

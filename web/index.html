@@ -21,15 +21,20 @@
     </header>
     <main class="frame">
       <section class="intro">
-        <p class="kicker">
-          Geomagnetic storm archive <span> / </span> May 2024
-        </p>
+        <p class="kicker">Geomagnetic storm archive <span> / </span> 2024</p>
         <h1>{{TITLE}}</h1>
-        <p>
-          Five solar eruptions, one storm, two Canadian observatories. Follow
-          the Gannon storm from the Sun to the magnetic field beneath the
-          aurora.
+        <p class="intro-text">
+          Follow a solar eruption to Earth, then compare the ground response at
+          two Canadian magnetic observatories.
         </p>
+        <div class="case-control">
+          <label for="night">Storm night</label>
+          <select id="night">
+            <option value="2024-05-10">10 May 2024 · Gannon storm</option>
+            <option value="2024-10-10">10 October 2024 · October storm</option>
+          </select>
+          <a id="case-link" href="?night=2024-05-10">Link to this night</a>
+        </div>
       </section>
       <section id="signals" class="instrument" aria-labelledby="signal-heading">
         <div class="panel-head">
@@ -37,7 +42,9 @@
             <p class="kicker">Victoria &nbsp; / &nbsp; St. John’s</p>
             <h2 id="signal-heading">Ground signals</h2>
           </div>
-          <div class="period">10–12 May 2024<br />Universal time (UTC)</div>
+          <div class="period">
+            <span id="plot-period"></span><br />Universal time (UTC)
+          </div>
         </div>
         <p class="plot-desc">
           Change in the northward magnetic field from each station’s reference
@@ -84,6 +91,13 @@
             ><button type="button" id="shock">Jump to shock</button
             ><button type="button" id="peak">First Kp 9 interval</button>
           </div>
+          <div class="evenings">
+            <label for="evening">Local evening</label>
+            <select id="evening">
+              <option value="">Jump to 9 p.m. at a station</option>
+            </select>
+          </div>
+          <p class="plot-note" id="local-times"></p>
         </div>
         <p class="plot-note" id="selection-note">Loading measurements…</p>
       </section>
@@ -104,11 +118,7 @@
           <p class="kicker">NASA event log</p>
           <h2>From Sun to Earth</h2>
         </div>
-        <p>
-          NASA’s DONKI catalogue links these coronal mass ejections (CMEs) and
-          an interplanetary shock to the May 10 storm. Several eruptions can
-          combine on the way to Earth.
-        </p>
+        <p id="event-intro"></p>
         <ol id="event-list" class="events"></ol>
       </section>
       <section id="sources" class="block">
@@ -118,12 +128,7 @@
         </div>
         <details open>
           <summary>How to read the traces</summary>
-          <p>
-            Each point is a five-minute average of definitive one-minute X
-            measurements. Each station’s reference is its median X from 12:00 to
-            12:59 UTC on May 10. Negative values indicate a decrease from that
-            local reference. A missing minute leaves a gap for that station.
-          </p>
+          <p id="baseline-method"></p>
           <p id="baselines"></p>
         </details>
         <details>
@@ -146,8 +151,8 @@
           </p>
           <ul id="source-links">
             <li>
-              <a href="https://ccmc.gsfc.nasa.gov/storms/may2024/"
-                >NASA’s May 2024 storm guide</a
+              <a id="storm-guide" href="https://ccmc.gsfc.nasa.gov/donki/"
+                >NASA storm record</a
               >
             </li>
             <li>
@@ -160,7 +165,9 @@
               >
             </li>
             <li>
-              <a href="./data/storm.json">Download the displayed data (JSON)</a>
+              <a id="data-download" href="./data/storm.json"
+                >Download the displayed data (JSON)</a
+              >
             </li>
           </ul>
         </details>
