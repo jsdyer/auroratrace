@@ -24,8 +24,7 @@
         <p class="kicker">Geomagnetic storm archive <span> / </span> 2024</p>
         <h1>{{TITLE}}</h1>
         <p class="intro-text">
-          Follow a solar eruption to Earth, then compare the ground response at
-          two Canadian magnetic observatories.
+          How differently did the same solar storm shake the magnetic field on Canada’s two coasts? Compare Victoria and St. John’s at the same instant. The traces measure the field on the ground. Seeing the northern lights also depends on darkness, cloud and where you were.
         </p>
         <div class="case-control">
           <label for="night">Storm night</label>
@@ -50,6 +49,7 @@
           Change in the northward magnetic field from each station’s reference
           hour, in nanoteslas.
         </p>
+        <p id="contrast-summary" class="plot-desc"></p>
         <div class="chart-shell">
           <svg id="chart" role="img" aria-labelledby="chart-title">
             <title id="chart-title">
@@ -89,6 +89,7 @@
             ><button type="button" id="next" aria-label="Next five minutes">
               +5 min</button
             ><button type="button" id="shock">Jump to shock</button
+            ><button type="button" id="contrast">Largest coast-to-coast difference</button
             ><button type="button" id="peak">First Kp 9 interval</button>
           </div>
           <div class="evenings">

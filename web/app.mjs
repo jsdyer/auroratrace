@@ -1,4 +1,5 @@
 import {
+  widestDifference,
   eveningStops,
   fieldText,
   stationClocks,
@@ -207,6 +208,14 @@ function read(index) {
     (bin
       ? "Kp covers the surrounding three-hour interval."
       : "No Kp value listed for this time.");
+  const values = edition.stations.map(station => station.delta_nT[selected]);
+  if (values.every(Number.isFinite)) {
+    const relation = values.every(value => value > 0) ? "Both fields rose above their own references."
+      : values.every(value => value < 0) ? "Both fields fell below their own references."
+      : values[0] * values[1] < 0 ? "One field rose while the other fell relative to its reference."
+      : "At least one field was at its reference level.";
+    byId("selection-note").textContent += " " + relation;
+  }
   for (const button of byId("bars").children)
     button.setAttribute(
       "aria-pressed",
@@ -216,6 +225,19 @@ function read(index) {
 
 function populate() {
   const { storm } = edition;
+  const [west, east] = edition.stations;
+  const widest = widestDifference(west.delta_nT, east.delta_nT);
+  byId("contrast").disabled = !widest;
+  if (widest) {
+    const {index, difference} = widest;
+    byId("contrast-summary").textContent =
+      "The largest difference between the stations’ changes was " +
+      Math.round(difference).toLocaleString("en-CA") + " nT at " +
+      timeText(timeAt(edition, index)) + " UTC. " + west.name + " read " +
+      fieldText(west.delta_nT[index]) + " and " + east.name + " read " +
+      fieldText(east.delta_nT[index]) + " relative to their own reference hours.";
+    byId("contrast").onclick = () => read(index);
+  }
   const civilDay = new Intl.DateTimeFormat("en-GB", {
     timeZone: "UTC",
     day: "numeric",
