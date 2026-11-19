@@ -3,7 +3,7 @@
 [Open Aurora Trace](https://coolcode.ca/auroratrace/) to choose between two Canadian storm nights. The shared cursor compares five-minute ground measurements in Victoria, British Columbia, and St. John’s, Newfoundland and Labrador, with the NOAA planetary Kp interval covering the same time. The event log follows NASA’s recorded relationships from the solar eruptions to Earth.
 
 <!-- coolcode:guide -->
-Choose May 10 or October 10, then select the first peak Kp interval to read both observatories at the same time. At 21:00 UTC on May 10, Victoria’s northward field was 160 nT below its reference while St. John’s was 354 nT above its own.
+Jump to the largest coast-to-coast difference. On October 10 at 23:25 UTC, Victoria was 552 nT above its reference and St. John’s was 622 nT below. Each Kp value covers three hours, while the station readings cover five minutes.
 <!-- /coolcode:guide -->
 
 ## Pick a night

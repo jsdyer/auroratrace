@@ -57,6 +57,10 @@ def main():
                 assert page.locator("#event-list li").count() == 4
                 assert page.locator("#bars button").count() == 8
                 assert "magnetopause" in page.locator("#event-list").inner_text()
+                page.locator("#contrast").click()
+                assert page.locator("#selected").inner_text() == "10 Oct 23:25 UTC"
+                assert "One field rose" in page.locator("#selection-note").inner_text()
+                assert "1,174 nT" in page.locator("#contrast-summary").inner_text()
                 page.locator("#shock").click()
                 assert page.locator("#selected").inner_text() == "10 Oct 14:45 UTC"
                 page.locator("#evening").select_option(label="Victoria · 10 Oct at 21:00")

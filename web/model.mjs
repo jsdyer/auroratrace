@@ -93,3 +93,13 @@ export function fieldText(value) {
   const sign = rounded > 0 ? "+" : rounded < 0 ? "−" : "";
   return sign + Math.abs(rounded) + " nT";
 }
+
+export function widestDifference(first, second) {
+  let widest = null;
+  for (let index = 0; index < first.length; index++) {
+    if (!Number.isFinite(first[index]) || !Number.isFinite(second[index])) continue;
+    const difference = Math.abs(first[index] - second[index]);
+    if (!widest || difference > widest.difference) widest = { index, difference };
+  }
+  return widest;
+}
