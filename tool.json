@@ -1,16 +1,40 @@
 {
-  "id": "coolcode-tool-template",
-  "title": "CoolCode Tool Starter",
-  "description": "A browser-only example that trims lines and removes exact duplicates.",
-  "category": "security",
-  "tags": ["text", "lines", "duplicates"],
-  "icon": "scan-search",
-  "url": "/coolcode-tool-template/",
-  "source": "https://github.com/jsdyer/coolcode-tool-template",
+  "id": "auroratrace",
+  "title": "Aurora Trace",
+  "description": "Follow the May 2024 solar eruptions to Earth and compare the magnetic storm at two Canadian observatories.",
+  "category": "explorers",
+  "tags": [
+    "space weather",
+    "Canada",
+    "magnetometers",
+    "NASA",
+    "Kp",
+    "Victoria",
+    "St. John's"
+  ],
+  "icon": "activity",
+  "url": "/auroratrace/",
+  "source": "https://github.com/jsdyer/auroratrace",
   "hosting": "project",
   "access": "browser",
   "data_info": {
-    "mode": "local",
-    "detail": "The browser reads the text you paste and compares its lines."
+    "mode": "snapshot",
+    "detail": "NASA DONKI links solar eruptions to the May 2024 storm, with Canadian ground measurements from INTERMAGNET.",
+    "cadence": "Monthly archive check",
+    "probes": [
+      {
+        "label": "Data retrieved",
+        "url": "https://coolcode.ca/auroratrace/data/storm.json",
+        "path": [
+          "retrieved"
+        ],
+        "count_at": {
+          "path": [
+            "count"
+          ],
+          "unit": "station averages"
+        }
+      }
+    ]
   }
 }

@@ -1,33 +1,177 @@
 <!doctype html>
 <html lang="en-CA">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
-  <meta name="description" content="{{DESCRIPTION}}">
-  <title>{{TITLE}} · CoolCode</title>
-  <link rel="stylesheet" href="./style.css">
-  <script type="module" src="./app.mjs"></script>
-</head>
-<body data-tool-id="{{TOOL_ID}}">
-  <a class="skip" href="#main">Skip to content</a>
-  <header><a href="https://coolcode.ca/">← CoolCode.ca</a><a href="{{SOURCE_URL}}">Source &amp; instructions ↗</a></header>
-  <main id="main">
-    <p class="eyebrow">Browser tool starter</p>
-    <h1>{{TITLE}}</h1>
-    <p class="intro">{{DESCRIPTION}}</p>
-    <section aria-labelledby="example-title">
-      <h2 id="example-title">Clean a list</h2>
-      <p>Trim spaces, skip blank lines and remove exact duplicates. Capitalization stays distinct.</p>
-      <div class="panels">
-        <div><label for="input">Your lines</label><textarea id="input" rows="10" maxlength="100000" spellcheck="false" placeholder="Paste one item per line"></textarea></div>
-        <div><label for="output">Cleaned lines</label><textarea id="output" rows="10" readonly spellcheck="false"></textarea></div>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <meta name="theme-color" content="#142c28" />
+    <meta name="description" content="{{DESCRIPTION}}" />
+    <title>{{TITLE}} · CoolCode</title>
+    <link rel="stylesheet" href="./style.css" />
+    <script type="module" src="./app.mjs"></script>
+  </head>
+  <body data-tool="{{TOOL_ID}}">
+    <header>
+      <div class="frame mast">
+        <a href="https://coolcode.ca/">CoolCode</a>
+        <nav aria-label="Sections">
+          <a href="#signals">Signals</a><a href="#events">Event log</a
+          ><a href="#sources">Sources</a>
+        </nav>
       </div>
-      <div class="actions"><button id="sample" type="button">Load example</button><button id="clear" type="button">Clear</button><button id="copy" type="button" hidden>Copy result</button></div>
-      <p id="status" role="status" aria-live="polite">Paste a list to begin.</p>
-      <noscript><p>This tool needs JavaScript to process your text. The source is available above.</p></noscript>
-    </section>
-    <aside aria-label="Privacy"><strong>Stays on your device.</strong> This example makes no API requests and does not save your text. Reloading clears it.</aside>
-  </main>
-  <footer>Part of <a href="https://coolcode.ca/">the CoolCode collection</a>.</footer>
-</body>
+    </header>
+    <main class="frame">
+      <section class="intro">
+        <p class="kicker">
+          Geomagnetic storm archive <span> / </span> May 2024
+        </p>
+        <h1>{{TITLE}}</h1>
+        <p>
+          Five solar eruptions, one storm, two Canadian observatories. Follow
+          the Gannon storm from the Sun to the magnetic field beneath the
+          aurora.
+        </p>
+      </section>
+      <section id="signals" class="instrument" aria-labelledby="signal-heading">
+        <div class="panel-head">
+          <div>
+            <p class="kicker">Victoria &nbsp; / &nbsp; St. John’s</p>
+            <h2 id="signal-heading">Ground signals</h2>
+          </div>
+          <div class="period">10–12 May 2024<br />Universal time (UTC)</div>
+        </div>
+        <p class="plot-desc">
+          Change in the northward magnetic field from each station’s reference
+          hour, in nanoteslas.
+        </p>
+        <div class="chart-shell">
+          <svg id="chart" role="img" aria-labelledby="chart-title">
+            <title id="chart-title">
+              Two magnetic traces and a shared time cursor. Use the time slider
+              below for exact values.
+            </title>
+          </svg>
+        </div>
+        <div class="readings">
+          <div>
+            <span class="key vic">Victoria, BC</span
+            ><strong id="vic-value">—</strong>
+          </div>
+          <div>
+            <span class="key stj">St. John’s, NL</span
+            ><strong id="stj-value">—</strong>
+          </div>
+          <div><span>Planetary Kp</span><strong id="kp-value">—</strong></div>
+        </div>
+        <div class="playhead">
+          <div class="cursor-head">
+            <label for="cursor">Time cursor</label
+            ><output for="cursor" id="selected">Loading…</output>
+          </div>
+          <input
+            type="range"
+            id="cursor"
+            min="0"
+            max="503"
+            value="144"
+            step="1"
+            disabled
+          />
+          <div class="jump">
+            <button type="button" id="back" aria-label="Previous five minutes">
+              −5 min</button
+            ><button type="button" id="next" aria-label="Next five minutes">
+              +5 min</button
+            ><button type="button" id="shock">Jump to shock</button
+            ><button type="button" id="peak">First Kp 9 interval</button>
+          </div>
+        </div>
+        <p class="plot-note" id="selection-note">Loading measurements…</p>
+      </section>
+      <section class="block" aria-labelledby="kp-heading">
+        <div class="heading">
+          <p class="kicker">Planetary index</p>
+          <h2 id="kp-heading">Three hours at a time</h2>
+        </div>
+        <p>
+          Each bar spans a three-hour NOAA Kp interval in the NASA storm record.
+          Select an interval to place the ground-signal cursor at its start.
+        </p>
+        <div id="bars" class="bars" aria-label="Kp intervals"></div>
+        <div id="kp-detail" class="detail" aria-live="polite"></div>
+      </section>
+      <section id="events" class="block event-block">
+        <div class="heading">
+          <p class="kicker">NASA event log</p>
+          <h2>From Sun to Earth</h2>
+        </div>
+        <p>
+          NASA’s DONKI catalogue links these coronal mass ejections (CMEs) and
+          an interplanetary shock to the May 10 storm. Several eruptions can
+          combine on the way to Earth.
+        </p>
+        <ol id="event-list" class="events"></ol>
+      </section>
+      <section id="sources" class="block">
+        <div class="heading">
+          <p class="kicker">Reading the record</p>
+          <h2>Measurements &amp; sources</h2>
+        </div>
+        <details open>
+          <summary>How to read the traces</summary>
+          <p>
+            Each point is a five-minute average of definitive one-minute X
+            measurements. Each station’s reference is its median X from 12:00 to
+            12:59 UTC on May 10. Negative values indicate a decrease from that
+            local reference. A missing minute leaves a gap for that station.
+          </p>
+          <p id="baselines"></p>
+        </details>
+        <details>
+          <summary>What Kp measures</summary>
+          <p>
+            Kp is a unitless planetary index on a scale from 0 to 9. Each value
+            covers three hours. DONKI timestamps the end of each interval. A
+            ground disturbance or high Kp alone cannot establish whether someone
+            saw an aurora.
+          </p>
+        </details>
+        <details>
+          <summary>Source records and data use</summary>
+          <p>
+            Natural Resources Canada operates the Victoria and St. John’s
+            magnetic observatories. INTERMAGNET maintains observatory data
+            standards and distributes these definitive records through the
+            British Geological Survey. Aurora Trace averages and
+            baseline-corrects the X component.
+          </p>
+          <ul id="source-links">
+            <li>
+              <a href="https://ccmc.gsfc.nasa.gov/storms/may2024/"
+                >NASA’s May 2024 storm guide</a
+              >
+            </li>
+            <li>
+              <a href="https://intermagnet.org/data_conditions.html"
+                >INTERMAGNET data conditions</a
+              >
+              ·
+              <a href="https://creativecommons.org/licenses/by-nc/4.0/"
+                >CC BY-NC 4.0</a
+              >
+            </li>
+            <li>
+              <a href="./data/storm.json">Download the displayed data (JSON)</a>
+            </li>
+          </ul>
+        </details>
+        <p id="edition">Loading source date…</p>
+      </section>
+    </main>
+    <footer>
+      <div class="frame">
+        <a href="https://coolcode.ca/">CoolCode</a
+        ><a href="{{SOURCE_URL}}">Source code ↗</a>
+      </div>
+    </footer>
+  </body>
 </html>

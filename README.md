@@ -1,115 +1,31 @@
-# CoolCode browser tool template
+# Aurora Trace
 
-A starting point for independent tools at `coolcode.ca/<repo>/`: a working local-text
-example, responsive UI, Python standard-library build, Node tests, PR checks and Pages
-publication. No npm install is needed.
-
-## Using the example
+[Open Aurora Trace](https://coolcode.ca/auroratrace/) to replay the May 2024 Gannon geomagnetic storm. The event log follows NASA’s recorded relationships between solar eruptions and one storm. The shared cursor pairs five-minute ground measurements at Victoria, British Columbia, and St. John’s, Newfoundland and Labrador, with the NOAA planetary Kp interval in effect at that time.
 
 <!-- coolcode:guide -->
-The first occurrence of each trimmed line keeps its place. Compare the output with the original text before copying the result.
+Select the first Kp 9 interval to compare both observatories from 21:00 UTC on May 10. The traces show changes in the northward field relative to each station’s median during the same pre-storm hour.
 <!-- /coolcode:guide -->
 
-For a real tool, replace this paragraph with one or two plain-text sentences
-about an example, a limit or how to interpret the results. Keep the source,
-coverage, refresh behaviour and a worked example in this README as appropriate.
-When updating a tool, revise any details its behaviour has changed and keep the
-homepage's shorter data-source sentence in `tool.json` accurate.
-The hub imports the marked note into the catalogue README.
+## Following the storm
 
-## One-time template setup
+DONKI storm `2024-05-10T15:00:00-GST-001` links five coronal mass ejections on May 8–9 and one interplanetary shock at 16:36 UTC on May 10. The associations come from NASA's event IDs and may be revised. More than one eruption could contribute to a disturbance. The storm start denotes the beginning of a Kp reporting interval, which explains why it precedes the shock. Each event in the application links to its own DONKI record.
 
-Enable **Settings → General → Template repository** here. This repository does not
-need Pages enabled: its workflow builds/tests but intentionally skips deployment.
-New copies also skip deployment until `scripts/init.py` sets the tool ID to match
-their repository name. This lets you create the repo before configuring Pages.
+DONKI lists thirteen NOAA Kp values for this storm. Each observation time marks the end of a three-hour interval. For example, the value timestamped May 11 at 00:00 UTC covers May 10 from 21:00 to midnight. Kp is a unitless, global index from 0 to 9. Magnetometers measure a local magnetic field. Ground disturbances and Kp cannot confirm that anyone at the station saw an aurora.
 
-## Start a new tool
+[NASA event overview](https://ccmc.gsfc.nasa.gov/storms/may2024/) · [Storm record](https://ccmc.gsfc.nasa.gov/DONKI/view/GST/30693/-1) · [NOAA interval example](https://ccmc.gsfc.nasa.gov/DONKI/view/Alert/30703/1)
 
-1. Select **Use this template → Create a new repository**, choose owner `jsdyer`,
-   a unique lowercase name such as `my-tool`, and public visibility.
-2. Clone the new repository. Use Python 3.12+ and Node 24+.
-3. Set the identity, using a slug that matches the repository name:
+## Ground measurements
 
-```sh
-python3 scripts/init.py my-tool --title "My Tool" --description "Describe what this tool does."
-```
+The INTERMAGNET archive at the British Geological Survey supplies Natural Resources Canada's definitive one-minute XYZF observations. The HAPI datasets are `vic/definitive/PT1M/xyzf` and `stj/definitive/PT1M/xyzf`. X measures the northward field in nanoteslas. The refresh checks the cadence, component order, units and missing-value code in the source metadata.
 
-Review the category, tags and icon in `tool.json`. `access: "browser"` tells the main
-catalogue that the tool works immediately without installation. `--owner` supports a different
-GitHub owner, but only projects owned by `jsdyer` inherit the CoolCode domain.
+The comparison begins May 10 at 12:00 UTC and ends May 12 at 06:00 UTC, exclusive. We subtract each station’s median X for 12:00–12:59 UTC May 10 from its consecutive five-minute means. The baseline is local to each station. A displayed time is the beginning of the five-minute interval. A missing minute makes its entire interval a gap, and traces break at gaps. The readout rounds to the nearest nanotesla, while the public JSON retains two decimal places. Five-minute means smooth brief excursions. At May 11 00:00 UTC the five-minute changes round to −71 nT at Victoria and 0 nT at St. John’s.
 
-4. Replace the example in `web/` and its tests. Update the privacy explanation,
-   source attribution and README to describe the real tool.
-5. Test and preview:
+Natural Resources Canada operates and supports both observatories. INTERMAGNET promotes observatory standards and distributes the data. The derived traces are provided under the INTERMAGNET CC BY-NC 4.0 terms. The JSON snapshot links both source measurements and station metadata. Browser controls read the snapshot from this site and do not transmit selections or save them.
 
-```sh
-node --test tests/*.test.mjs
-python3 -m unittest discover -s tests -v
-python3 scripts/build.py
-python3 -m http.server 8000 --directory dist
-```
+[INTERMAGNET archive](https://imag-data.bgs.ac.uk/GIN_V1/hapi) · [Data conditions](https://intermagnet.org/data_conditions.html) · [CC BY-NC 4.0](https://creativecommons.org/licenses/by-nc/4.0/) · [Snapshot](https://coolcode.ca/auroratrace/data/storm.json)
 
-Open `http://localhost:8000/`. The example trims lines, skips blanks and removes exact
-duplicates, preserving first-seen order and capitalization. It makes no API requests
-and does not persist text. Update that explanation if your app behaves differently.
+## Build and refresh
 
-CI also tests the browser flow and mobile layout at a project subpath. Replace the
-sample assertions in `tests/browser_smoke.py` when implementing your own UI. To run
-that check locally (optional for ordinary preview):
+The default build works offline with the checked-in edition. The monthly GitHub Actions job rechecks the historical event, calls NASA with the public demonstration key with a keyless CCMC fallback, checks the INTERMAGNET archive, and replaces the snapshot only after validating it. A failed refresh leaves the last published edition in place. The retrieved date records the source check and is independent of the May 2024 observation dates.
 
-```sh
-python3 -m venv .venv
-. .venv/bin/activate
-python3 -m pip install -r tests/browser-requirements.txt
-python3 -m playwright install --with-deps chromium
-python3 tests/browser_smoke.py
-```
-
-Playwright is a test-only dependency; the app and its static build do not use it.
-
-## Publish and register
-
-When the actual tool is ready, in the **new tool repository** set **Settings → Pages → Build and deployment →
-Source → GitHub Actions**. Push to `main`, or manually run **Browser tool · Check and
-publish** after enabling Pages. If the initial deployment ran before Pages was enabled,
-enable it and rerun. PRs only check/build and provide a downloadable preview artifact.
-
-Keep asset paths and module imports relative. Check `https://coolcode.ca/my-tool/`.
-Do not add a CNAME or set `coolcode.ca` as this project's custom domain; the account
-site supplies it. Only successful `main` builds deploy.
-
-After verifying the app, copy the reviewed object from `tool.json` into `data/tools.json`
-in [the main site](https://github.com/jsdyer/jsdyer.github.io). Each tool still builds
-independently. Update the hub record when listing metadata changes; the hub is the
-authority for discovery. Ordinary app updates touch only this repository.
-
-The main site separates **Use in your browser** from **Install yourself**. An app
-that asks for a file is still a browser tool. Standalone Linux packages should start
-in their own repositories with their own build/release workflow, rather than copying
-this browser-only scaffold. Their hub record uses `access: "install"`, links to an
-installation guide, and includes `requirements`.
-
-## Files
-
-| Path | Purpose |
-| --- | --- |
-| `tool.json` | Page metadata and a ready-to-copy catalogue record |
-| `web/` | HTML, responsive CSS, DOM interactions and separate model logic |
-| `scripts/build.py` | Escape metadata and build `web/` into `dist/` |
-| `scripts/init.py` | Set a new project's identity |
-| `tests/` | Application and builder tests |
-| `.github/workflows/pages.yml` | Check PRs and publish successful main builds |
-| `AGENTS.md` | Instructions for future coding work |
-
-Namespace optional storage as `coolcode:<tool-id>:<key>`; CoolCode paths share a
-browser origin. Don't save pasted text/uploads by default. Document external APIs
-and send only the information needed for the selected action. Never embed secrets.
-
-Scheduled refresh is opt-in. Validate source data before deploying, display its date,
-and preserve the last good deployment on failure. Public-repository schedules can
-stop after 60 days without repository activity.
-
-Templates don't propagate future edits automatically. Adopt fixes explicitly and
-consider a versioned reusable workflow once several tools confirm the shared process.
-Choose and add the intended software license before distributing a new project.
+Run `python3 scripts/refresh.py` to refresh, `node --test tests/*.test.mjs` and `python3 -m unittest discover -s tests -v` to test, then `python3 scripts/build.py` to create the static site in `dist/`. For the browser check, install the pinned dependency in `tests/browser-requirements.txt`, install Chromium with Playwright, and run `python3 tests/browser_smoke.py`.
