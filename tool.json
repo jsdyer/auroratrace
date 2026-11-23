@@ -20,7 +20,7 @@
   "data_info": {
     "mode": "snapshot",
     "detail": "NASA DONKI links solar eruptions to two 2024 storms, with Canadian ground measurements from INTERMAGNET.",
-    "cadence": "Monthly archive check",
+    "cadence": "Monthly",
     "probes": [
       {
         "label": "Data retrieved",
