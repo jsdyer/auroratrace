@@ -36,3 +36,11 @@ Natural Resources Canada operates and supports both observatories. INTERMAGNET p
 The default build works offline with the checked-in editions. A monthly GitHub Actions job rechecks the historical events using NASA CCMC’s keyless service, with the NASA gateway’s public demonstration key as a fallback. It checks both INTERMAGNET records and publishes only after both editions validate. A failed refresh leaves the last published site in place. The retrieved date records the source check, separate from the 2024 observation dates. The [archive manifest](https://coolcode.ca/auroratrace/data/archive.json) reports the retrieval date, per-night counts and total.
 
 Run `python3 scripts/refresh.py` to refresh, `node --test tests/*.test.mjs` and `python3 -m unittest discover -s tests -v` to test, then `python3 scripts/build.py` to build the static site in `dist/`. For browser tests, install the pinned dependency in `tests/browser-requirements.txt`, install Chromium with Playwright and run `python3 tests/browser_smoke.py`.
+
+<!-- schedule-reliability -->
+## Schedule reliability
+
+Public GitHub repositories can have scheduled workflows disabled after 60 days of inactivity. A separate weekly [schedule guard](.github/workflows/schedule-guard.yml) calls GitHub's enable-workflow API for an explicit list of refresh workflows and itself. It can restore workflows disabled for inactivity, preserves manually disabled workflows, and runs independently of collection failures.
+
+This is an interim mitigation, not a scheduling guarantee: GitHub does not document active-workflow renewal as a permanent exemption, and scheduled runs can be delayed or dropped. A scheduler on our own Linux server is the planned independent trigger. The guard does not collect data, create dummy commits, or change source/check timestamps; successful collection and published data freshness still need monitoring.
+<!-- /schedule-reliability -->
